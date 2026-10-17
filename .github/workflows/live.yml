@@ -1,0 +1,26 @@
+name: Live engine check
+
+# Runs the real searches from a GitHub runner and publishes an engine health table
+# in the job summary. Runner IPs are datacenter IPs, so a blocked engine here does
+# not mean it is blocked on your server.
+on:
+  push:
+    branches: [main]
+  schedule:
+    - cron: "17 6 * * *"
+  workflow_dispatch:
+
+jobs:
+  live:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -e ".[dev]"
+      - name: Engine health report
+        run: python scripts/engine_report.py "python programming language" | tee -a "$GITHUB_STEP_SUMMARY"
+      - name: Live tests
+        run: pytest -m live -v -rs
