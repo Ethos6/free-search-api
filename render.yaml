@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: free-search-api
+    runtime: docker
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: FREESEARCH_API_KEYS
+        generateValue: true
+      - key: WORKERS
+        value: "1"
