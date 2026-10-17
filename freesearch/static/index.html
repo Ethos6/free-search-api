@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FreeSearch API</title>
+<style>
+  :root { --bg:#fafaf9; --fg:#1c1917; --muted:#78716c; --card:#fff; --line:#e7e5e4; --accent:#2563eb; --ok:#16a34a; --bad:#dc2626; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#0c0a09; --fg:#f5f5f4; --muted:#a8a29e; --card:#1c1917; --line:#292524; --accent:#60a5fa; --ok:#4ade80; --bad:#f87171; } }
+  * { box-sizing:border-box; }
+  body { margin:0; font:15px/1.5 system-ui,-apple-system,Segoe UI,Roboto,sans-serif; background:var(--bg); color:var(--fg); }
+  main { max-width:820px; margin:0 auto; padding:40px 16px 80px; }
+  h1 { font-size:28px; margin:0 0 4px; letter-spacing:-.02em; }
+  p.sub { color:var(--muted); margin:0 0 24px; }
+  form { display:flex; gap:8px; flex-wrap:wrap; }
+  input, select, button { font:inherit; padding:10px 12px; border:1px solid var(--line); border-radius:10px; background:var(--card); color:var(--fg); }
+  input[name=q] { flex:1 1 320px; }
+  button { background:var(--accent); color:#fff; border:none; cursor:pointer; font-weight:600; }
+  .opts { display:flex; gap:8px; flex-wrap:wrap; margin-top:8px; color:var(--muted); font-size:13px; align-items:center; }
+  .opts input[type=text] { padding:6px 10px; font-size:13px; }
+  .meta { color:var(--muted); font-size:13px; margin:20px 0 8px; }
+  .chip { display:inline-block; padding:1px 8px; border-radius:99px; border:1px solid var(--line); margin:2px 4px 2px 0; font-size:12px; }
+  .chip.ok { color:var(--ok); } .chip.bad { color:var(--bad); }
+  .answer { background:var(--card); border:1px solid var(--line); border-left:3px solid var(--accent); padding:12px 14px; border-radius:10px; margin:12px 0; }
+  .r { padding:14px 0; border-bottom:1px solid var(--line); }
+  .r a { color:var(--accent); font-weight:600; text-decoration:none; font-size:16px; }
+  .r .u { color:var(--ok); font-size:13px; word-break:break-all; }
+  .r .c { margin:4px 0 0; }
+  .r .e { color:var(--muted); font-size:12px; }
+  footer { color:var(--muted); font-size:13px; margin-top:40px; }
+  footer a { color:var(--accent); }
+  code { background:var(--card); border:1px solid var(--line); padding:1px 5px; border-radius:6px; font-size:13px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>FreeSearch API</h1>
+  <p class="sub">Your own keyless web search API. Try it here, then call <code>/search?q=…</code> from your code. Docs at <a href="/docs">/docs</a>.</p>
+  <form id="f">
+    <input name="q" placeholder="Search the web…" autofocus required>
+    <select name="category"><option value="web">Web</option><option value="news">News</option></select>
+    <button>Search</button>
+  </form>
+  <div class="opts">
+    <label><input type="checkbox" name="answer" form="f"> instant answer</label>
+    <select name="time" form="f"><option value="">any time</option><option>day</option><option>week</option><option>month</option><option>year</option></select>
+    <input type="text" id="key" placeholder="API key (if the server requires one)">
+  </div>
+  <div id="out"></div>
+  <footer>Open source · MIT · <a href="https://github.com/Ethos6/free-search-api">GitHub</a> · <a href="/engines">engine status</a></footer>
+</main>
+<script>
+const $ = s => document.querySelector(s);
+const esc = s => (s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+try { $('#key').value = localStorage.getItem('fs_key') || ''; } catch (e) {}
+$('#f').addEventListener('submit', async ev => {
+  ev.preventDefault();
+  const fd = new FormData(ev.target);
+  const key = $('#key').value.trim();
+  try { localStorage.setItem('fs_key', key); } catch (e) {}
+  const params = new URLSearchParams({ q: fd.get('q') });
+  if (fd.get('answer')) params.set('include_answer', 'true');
+  if (fd.get('time')) params.set('time_range', fd.get('time'));
+  const path = fd.get('category') === 'news' ? '/news' : '/search';
+  $('#out').innerHTML = '<p class="meta">Searching…</p>';
+  try {
+    const r = await fetch(`${path}?${params}`, { headers: key ? { Authorization: 'Bearer ' + key } : {} });
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.detail || r.statusText);
+    const chips = d.engines.map(e => `<span class="chip ${e.ok ? 'ok' : 'bad'}" title="${esc(e.error || '')}">${esc(e.name)} ${e.ok ? e.results : '✕'}</span>`).join('');
+    $('#out').innerHTML =
+      `<p class="meta">${d.number_of_results} results in ${d.response_time}s ${d.cached ? '(cached)' : ''}<br>${chips}</p>` +
+      (d.answer ? `<div class="answer">${esc(d.answer)}</div>` : '') +
+      d.results.filter(x => /^https?:\/\//i.test(x.url)).map(x => `<div class="r"><a href="${esc(x.url)}" target="_blank" rel="noopener">${esc(x.title)}</a>
+        <div class="u">${esc(x.url)}</div><p class="c">${esc(x.content)}</p>
+        <div class="e">${esc([x.source, x.published_date].filter(Boolean).join(' · '))} [${esc(x.engines.join(', '))}] score ${x.score}</div></div>`).join('');
+  } catch (e) { $('#out').innerHTML = `<p class="meta">Error: ${esc(e.message)}</p>`; }
+});
+</script>
+</body>
+</html>
