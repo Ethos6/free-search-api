@@ -51,7 +51,14 @@ FreeSearch speaks the same request and response formats as the paid APIs, so you
 
 ## 🚀 Quick start
 
-**Docker (recommended)**
+**Docker, one command**
+
+```bash
+docker run -d -p 8000:8000 ghcr.io/ethos6/free-search-api:latest
+curl "http://localhost:8000/search?q=hello+world"     # or open http://localhost:8000
+```
+
+**Docker Compose (with a Redis cache)**
 
 ```bash
 git clone https://github.com/Ethos6/free-search-api && cd free-search-api
