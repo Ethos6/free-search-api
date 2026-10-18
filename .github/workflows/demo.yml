@@ -1,0 +1,47 @@
+name: Demo GIF
+
+# Records docs/demo.gif from the real web UI against live sources, then
+# commits it. Run it from the Actions tab whenever the UI changes.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  record:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Install
+        run: |
+          pip install -e .
+          pip install playwright pillow
+          python -m playwright install --with-deps chromium
+      - name: Start server
+        run: |
+          nohup freesearch serve --host 127.0.0.1 --port 8000 > server.log 2>&1 &
+          for i in $(seq 1 30); do curl -sf http://127.0.0.1:8000/health && break; sleep 1; done
+          sleep 15
+      - name: Record demo (fails if the page shows no real results)
+        run: python scripts/record_demo.py --url http://127.0.0.1:8000 --out docs/demo.gif
+      - name: Upload debug output
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: demo-debug
+          path: |
+            demo-failure.png
+            server.log
+      - name: Commit the GIF
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/demo.gif
+          git diff --cached --quiet && echo "no change" && exit 0
+          git commit -m "Update demo GIF"
+          git push
