@@ -1,12 +1,13 @@
 name: Demo GIF
 
 # Records docs/demo.gif from the real web UI against live sources, then
-# commits it. Run it from the Actions tab whenever the UI changes.
+# proposes it as a pull request. Run it from the Actions tab whenever the UI changes.
 on:
   workflow_dispatch:
 
 permissions:
   contents: write
+  pull-requests: write
 
 jobs:
   record:
@@ -37,11 +38,18 @@ jobs:
           path: |
             demo-failure.png
             server.log
-      - name: Commit the GIF
+      - name: Open a pull request with the new GIF
+        # main is protected, so the GIF is proposed as a pull request.
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add docs/demo.gif
           git diff --cached --quiet && echo "no change" && exit 0
+          branch="demo-gif/${{ github.run_id }}"
+          git switch -c "$branch"
           git commit -m "Update demo GIF"
-          git push
+          git push origin "$branch"
+          gh pr create --base main --head "$branch" --title "Update demo GIF" \
+            --body "Recorded by the Demo GIF workflow (run ${{ github.run_id }})."
