@@ -8,6 +8,7 @@ Self-hosted metasearch that queries DuckDuckGo, Brave, Bing, Yahoo, Wikipedia, a
 It works as a **drop-in replacement for Tavily, Serper, the Brave Search API, and SearXNG**, and ships with an **MCP server** for Claude, Cursor and other AI agents.
 
 [![CI](https://github.com/Ethos6/free-search-api/actions/workflows/ci.yml/badge.svg)](https://github.com/Ethos6/free-search-api/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/Ethos6/free-search-api)](https://github.com/Ethos6/free-search-api/releases)
 [![Live engine check](https://github.com/Ethos6/free-search-api/actions/workflows/live.yml/badge.svg)](https://github.com/Ethos6/free-search-api/actions/workflows/live.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 ![Python](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12%20%7C%203.13-blue)
@@ -15,6 +16,10 @@ It works as a **drop-in replacement for Tavily, Serper, the Brave Search API, an
 ![MCP](https://img.shields.io/badge/MCP-server-8A2BE2)
 
 [Quick start](#-quick-start) · [API](#-api) · [Drop-in replacements](#-drop-in-replacement-for-paid-search-apis) · [MCP](#-mcp-server-claude-cursor-windsurf) · [Config](#%EF%B8%8F-configuration) · [How it works](#-how-it-works) · [FAQ](#-faq)
+
+<img src="docs/demo.gif" alt="FreeSearch web UI running a live search" width="850">
+
+<sub>Recorded automatically by the <a href="https://github.com/Ethos6/free-search-api/actions/workflows/demo.yml">Demo GIF workflow</a>: a real search against live engines from a GitHub runner.</sub>
 
 </div>
 
