@@ -51,12 +51,19 @@ class Recorder:
     def save(self, path: Path) -> None:
         if len(self.frames) < 2:
             raise SystemExit("too few frames captured")
-        imgs = [f[0].quantize(colors=128, method=Image.Quantize.MEDIANCUT, dither=Image.Dither.NONE)
-                for f in self.frames]
+        # One shared palette for every frame avoids colour shifts and partial-frame artifacts.
+        w, h = self.frames[0][0].size
+        sample = Image.new("RGB", (w, h * min(len(self.frames), 6)))
+        step = max(1, len(self.frames) // 6)
+        for k, f in enumerate(self.frames[::step][:6]):
+            sample.paste(f[0], (0, h * k))
+        palette = sample.quantize(colors=192, method=Image.Quantize.MEDIANCUT)
+        imgs = [f[0].quantize(palette=palette, dither=Image.Dither.NONE) for f in self.frames]
         durations = [max(40, min(f[1], 4000)) for f in self.frames]
         durations[-1] = 2500  # linger on the final frame
         path.parent.mkdir(parents=True, exist_ok=True)
-        imgs[0].save(path, save_all=True, append_images=imgs[1:], duration=durations, loop=0, optimize=True)
+        imgs[0].save(path, save_all=True, append_images=imgs[1:], duration=durations, loop=0,
+                     optimize=False, disposal=1)
         print(f"wrote {path} ({len(imgs)} frames, {path.stat().st_size // 1024} KiB)")
 
 
