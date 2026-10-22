@@ -61,15 +61,35 @@ def html_to_markdown(html: str, url: str | None = None) -> tuple[str | None, str
     return title, text or ""
 
 
+#: Statuses that mean "busy, try again shortly" (rate limiting, temporary overload).
+RETRY_STATUSES = (429, 503)
+#: Longest Retry-After we are willing to wait for, in seconds.
+MAX_RETRY_WAIT = 3.0
+
+
+def _retry_delay(value: str | None) -> float:
+    """Seconds to wait before retrying, from a Retry-After header (seconds form only)."""
+    try:
+        return min(MAX_RETRY_WAIT, max(0.0, float(value))) if value else 1.0
+    except ValueError:
+        return 1.0  # an HTTP-date or garbage: use a short default
+
+
 async def extract_url(client: HttpClient, url: str, max_chars: int = 20000, timeout: float = 10.0) -> ExtractResult:
     current = url
-    for _hop in range(6):  # follow redirects manually so every hop is SSRF-checked
+    retried = False
+    for _hop in range(7):  # follow redirects manually so every hop is SSRF-checked
         if not await asyncio.to_thread(_is_public_url, current):
             return ExtractResult(url=current, ok=False, error="URL is not a public http(s) address")
         try:
             resp = await client.get(current, timeout=timeout, allow_redirects=False)
         except HttpError as exc:
             return ExtractResult(url=current, ok=False, error=str(exc))
+        if resp.status in RETRY_STATUSES and not retried:
+            # One polite retry: sites such as Wikipedia rate-limit busy shared IPs briefly.
+            retried = True
+            await asyncio.sleep(_retry_delay(resp.headers.get("retry-after")))
+            continue
         location = resp.headers.get("location")
         if resp.status in (301, 302, 303, 307, 308) and location:
             current = urljoin(current, location)
