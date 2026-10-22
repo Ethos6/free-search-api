@@ -43,4 +43,8 @@ async def test_default_search_returns_results(fs):
 
 async def test_extract(fs):
     page = (await fs.extract(["https://en.wikipedia.org/wiki/Web_search_engine"]))[0]
+    print(f"\nextract: ok={page.ok} chars={len(page.content)} error={page.error}")
+    if not page.ok and page.error in ("HTTP 429", "HTTP 503"):
+        # Like the engines above: the site rate-limiting this runner's IP isn't a bug in Free Search.
+        pytest.skip(f"wikipedia is rate-limiting this IP: {page.error}")
     assert page.ok and len(page.content) > 500
