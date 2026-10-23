@@ -2,6 +2,8 @@
 
 # 🔎 FreeSearch API
 
+![Free Search API logo](free-search-api-mark.svg)
+
 **Your own web search API. Free forever, no API keys, no quotas.**
 
 Self-hosted metasearch that queries DuckDuckGo, Brave, Bing, Yahoo, Wikipedia, and news feeds in parallel and merges the results into one clean JSON API.<br>
