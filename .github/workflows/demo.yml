@@ -14,8 +14,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-python@v6
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
       - name: Install
@@ -32,7 +32,7 @@ jobs:
         run: python scripts/record_demo.py --url http://127.0.0.1:8000 --out docs/demo.gif
       - name: Upload debug output
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: demo-debug
           path: |
