@@ -1,11 +1,11 @@
-# Keeps dependencies current: weekly pull requests for Python packages,
+# Keeps dependencies current: monthly pull requests for Python packages,
 # GitHub Actions and the Docker base image.
 version: 2
 updates:
   - package-ecosystem: pip
     directory: /
     schedule:
-      interval: weekly
+      interval: monthly
     open-pull-requests-limit: 5
     groups:
       python-dependencies:
@@ -13,11 +13,11 @@ updates:
   - package-ecosystem: github-actions
     directory: /
     schedule:
-      interval: weekly
+      interval: monthly
     groups:
       actions:
         patterns: ["*"]
   - package-ecosystem: docker
     directory: /
     schedule:
-      interval: weekly
+      interval: monthly
